@@ -116,7 +116,7 @@
 # 498,4 -> 498,6 -> 496,6
 # 503,4 -> 502,4 -> 502,9 -> 494,9
 def read_input():
-    with open('14inputS.txt') as f:
+    with open('14input.txt') as f:
         return f.read().splitlines()
 
 
@@ -138,21 +138,25 @@ def read_input():
 # 7 ........#.
 # 8 ........#.
 # 9 #########.
-def create_cave_map():
+def create_cave_map(part2=False):
     cave_map = {}
-    for line in read_input():
+    for j, line in enumerate(read_input()):
         xp, yp = None, None  # previous x and y coordinates
         for i, pair in enumerate(line.split(' -> ')):
             x, y = map(int, pair.split(','))  # convert the x,y coordinate to integers
             cave_map[(x, y)] = '#'
             if i:
-                if xp == x:
-                    for y in range(min(yp, y), max(yp, y)):
-                        cave_map[(x, y)] = '#'
+                if xp == x: # vertical line
+                    for yv in range(min(yp, y), max(yp, y)):
+                        cave_map[(x, yv)] = '#'
+                elif yp == y: # horizontal line
+                    for xh in range(min(xp, x), max(xp, x)):
+                        cave_map[(xh, y)] = '#'
                 else:
-                    for x in range(min(xp, x), max(xp, x)):
-                        cave_map[(x, y)] = '#'
+                    print('Error: not a straight line:', j, line,'\n', xp, yp, x, y, i, pair)  # should never happen
+                    raise ValueError('Invalid input')
             xp, yp = x, y
+
     # fill in the air above the cave map and the + at the source of the sand
     # set the + at 500, 0 after filling the top row with .
     # find the min and max x and y coordinates
@@ -165,6 +169,15 @@ def create_cave_map():
         for y in range(0, min_y):
             cave_map[(x, y)] = '.'
     cave_map[(500, 0)] = '+'  # set the + at 500, 0
+
+    # for part 2, set the floor
+    if part2:
+        for x in range(min_x - max_y, max_x +max_y + 1):
+            cave_map[(x, max_y + 2)] = '#'
+            cave_map[(x, max_y + 1)] = '.'
+
+    print_cave_map(cave_map)
+
     return cave_map
 
 
@@ -213,11 +226,11 @@ def test_print_cave_map():
 
 test_print_cave_map()
 
-free_space = set('./\\')
+free_space = set('.|/\\')
 
 # simulate the falling sand
-def simulate_falling_sand():
-    map = create_cave_map()
+def simulate_falling_sand(part2=False):
+    map = create_cave_map(part2)
     # find the min and max x and y coordinates
     min_x = min(map.keys(), key=lambda p: p[0])[0]
     max_x = max(map.keys(), key=lambda p: p[0])[0]
@@ -229,8 +242,9 @@ def simulate_falling_sand():
     sand_count = 0      # count the number of sand units that come to rest
     last_sand_fall_to_abyss = False  # flag to indicate that the last sand fall was into the abyss
     x, y = source
-    while map[source] != '*':  # while the source of the sand is not marked as * for sand
+    while map[source] != 'o':  # while the source of the sand is not marked as * for sand
         while y <= max_y and map.get((x, y + 1), '.') in free_space:  # while the sand can fall down
+            map[(x, y)] = '|' # mark the sand as falling down
             y += 1
         if y > max_y:  # if the sand fell into the abyss
             if not last_sand_fall_to_abyss:
@@ -250,7 +264,7 @@ def simulate_falling_sand():
             y += 1
         else:  # the sand can't fall left or right so it comes to rest
             last_sand_fall_to_abyss = False
-            map[(x, y)] = '*'  # mark the sand as * for sand
+            map[(x, y)] = 'o'  # mark the sand as * for sand
             sand_count += 1
             x, y = source  # reset the x and y coordinates to the source of the sand
 
@@ -261,5 +275,10 @@ def do_part1():
     print(simulate_falling_sand())
 
 do_part1()
+
+def do_part2():
+    print(simulate_falling_sand(part2=True))
+
+do_part2()
 
 
