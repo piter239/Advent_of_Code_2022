@@ -2,18 +2,11 @@
 
 import numpy as np
 
-
-
 # read the height map from URL https://adventofcode.com/2022/day/12/input
-
-
-
 
 # read the heightmap from the text file
 with open("12_heightmap.txt", "r") as f:
     heightmap = np.array([list(line.strip()) for line in f.readlines()])
-
-
 
 # now all (a) and (S) are goals, and the (E) is the start position
 start_row, start_col = np.where(heightmap == "E")
