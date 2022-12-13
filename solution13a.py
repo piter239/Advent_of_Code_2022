@@ -70,60 +70,62 @@ def read_input():
             # If the line is empty, then it is the separator between
             # pairs of packets.
             if line == "":
-                # Add the current pair of packets to the list of pairs of packets.
-                if len(current_pair) == 2:
-                    packets.append(current_pair)
-                    current_pair = []
-                else:
-                    print("Error: current_pair is not a pair of packets.")
-                    quit()
-
+                pass
             else:
                 # The line is not empty, so it is a packet.
                 # Convert the line to a list.
                 current_pair.append(eval(line))
 
+                # if this was second packet, add the current pair of packets to the list of pairs of packets.
+                if len(current_pair) == 2:
+                    packets.append(current_pair)
+                    current_pair = []
+        if current_pair != []:
+            print(f"Error: current_pair {current_pair} is not a pair of packets.")
+            quit()
         return packets
 
 # Compare two packets, and return True if the packets are in the right order.
 # Otherwise, return False.
 def compare_packets(left_packet, right_packet):
-
-    # use recursive helper function compare returning
-    # -1 if left_packet < right_packet
-    # 0 if left_packet == right_packet
-    # 1 if left_packet > right_packet
-    # to compare two lists or integer with a list
-    def compare(left_packet, right_packet):
-        def sign(x):
-            return (0, (1, -1)[x < 0])[x != 0]
-        # If both packets are integers, compare them.
-        if isinstance(left_packet, int) and isinstance(right_packet, int):
-            return sign(left_packet - right_packet)
-        # If both packets are lists,
-        # then compare the first element of each list, then the second element,
-        # and so on.
-        if isinstance(left_packet, list) and isinstance(right_packet, list):
-            # If either is empty
-            if len(left_packet) == 0 or len(right_packet) == 0:
-                return sign(len(left_packet) - len(right_packet))
-            # If neither is empty, compare the first element of each list.
-            # Compare the first element of each list.
-            if compare(left_packet[0], right_packet[0]):
-                return compare(left_packet[0], right_packet[0])
-            else:
-                # The first elements are the same, so compare the rest of the lists.
-                return compare(left_packet[1:], right_packet[1:])
-        # If one packet is a list and the other is an integer,
-        # then convert the integer to a list containing that integer.
-        if isinstance(left_packet, int):
-            return compare([left_packet], right_packet)
-        else:
-            return compare(left_packet, [right_packet])
-        print("Error: compare_packets: left_packet and right_packet are not packets.")
-        quit()
-
+    # use helper function to compare the packets
     return compare(left_packet, right_packet) <= 0
+
+# use recursive helper function compare returning
+# -1 if left_packet < right_packet
+# 0 if left_packet == right_packet
+# 1 if left_packet > right_packet
+# to compare two lists or integer with a list
+def compare(left_packet, right_packet):
+    def sign(x):
+        return (0, (1, -1)[x < 0])[x != 0]
+    # If both packets are integers, compare them.
+    if isinstance(left_packet, int) and isinstance(right_packet, int):
+        return sign(left_packet - right_packet)
+    # If both packets are lists,
+    # then compare the first element of each list, then the second element,
+    # and so on.
+    if isinstance(left_packet, list) and isinstance(right_packet, list):
+        # If either is empty
+        if len(left_packet) == 0 or len(right_packet) == 0:
+            return sign(len(left_packet) - len(right_packet))
+        # If neither is empty, compare the first element of each list.
+        # Compare the first element of each list.
+        if compare(left_packet[0], right_packet[0]):
+            return compare(left_packet[0], right_packet[0])
+        else:
+            # The first elements are the same, so compare the rest of the lists.
+            return compare(left_packet[1:], right_packet[1:])
+    # If one packet is a list and the other is an integer,
+    # then convert the integer to a list containing that integer.
+    if isinstance(left_packet, int):
+        return compare([left_packet], right_packet)
+    else:
+        return compare(left_packet, [right_packet])
+    print("Error: compare_packets: left_packet and right_packet are not packets.")
+    quit()
+
+
 
 # Determine which pairs of packets are already in the right order.
 packets = read_input()
