@@ -117,9 +117,9 @@
 import re
 
 
-def read_input():
+def read_input(filename="15inputS.txt"):
     # Open the input file
-    with open("15input.txt", "r") as input_file:
+    with open(filename, "r") as input_file:
         # Initialize an empty dictionary to store the sensor and beacon positions
         positions = {}
         # Compile a regular expression to match the sensor and beacon positions in the input file
@@ -165,7 +165,13 @@ def print_grid(positions, row=None):
         print()
     return
 
+
+# memorize already calculated values
+from functools import lru_cache
+
+
 # calculate Manhattan distance between two points
+#@lru_cache(maxsize=None)
 def dist(p1, p2):
     return abs(p1[0] - p2[0]) + abs(p1[1] - p2[1])
 
@@ -181,41 +187,121 @@ def count_impossible_positions(positions, row):
     max_x = max(sensor[0] for sensor in sensors | beacons)
     max_y = max(sensor[1] for sensor in sensors | beacons)
 
-    #TODO: check if increase necessary
     increase = max(max_y, max_x - min_x)
 
     # Initialize a set of positions where a beacon cannot be present
-    possible_positions = set()
     impossible_positions = set()
     counter = 0
-    # Iterate over the x coordinates
-    for x in range(min_x - increase, max_x + increase):
+    for x in range(min_x - increase, max_x + increase + 1):
         if any(dist(sensor, (x, row)) <= dist(positions[sensor], sensor) for sensor in sensors):
             if (x, row) not in beacons:
-                #impossible_positions.add((x, row))
+                # impossible_positions.add((x, row))
                 counter += 1
     return counter
 
 
-# count the number of positions where a beacon cannot be present in a row for the given input
+# find one of few possible solutions - brute force in unfeasible
+# test circles around each sensor, starting with radius=dist(sensor, beacon)+1
+def count_possible_positions(positions):
+    """ """
+    # Sets of sensor and beacon positions
+    sensors = positions.keys()
+    beacons = set(positions.values())
+    # Find the minimum and maximum x coordinates of the sensors and beacons
+    max_x = max(sensor[0] for sensor in sensors | beacons)
+    max_y = max(sensor[1] for sensor in sensors | beacons)
+
+    pos_counter = 0
+    pos_tested = set()
+    possible_positions = set()
+    # Iterate over the x coordinates
+    # part_2
+    max_x = 4000000 if max_y > 1000 else 20
+    for y in range(max_y + 1):
+        for x in range(max_x + 1):
+            # If the current position is a sensor or beacon, skip it
+            if (x, y) in sensors | beacons:
+                continue
+            # If the current position is not a sensor or beacon, check if it is possible for a beacon to be present
+            if all(dist(sensor, (x, y)) > dist(positions[sensor], sensor) for sensor in sensors):
+                # If the current position is possible for a beacon to be present, add it to the set
+                possible_positions.add((x, y))
+                pos_counter += 1
+                print("Solution found: ", x, y)
+                print("Key", 4000000 * x + y)
+
+    print(f'{pos_counter} positions CAN contain a beacon')
+    return possible_positions
+
+
+# find one of few possible solutions - brute force in unfeasible
+# test circles around each sensor, starting with radius=dist(sensor, beacon)+1
+def fast_possible_position(positions):
+    """ """
+    # Sets of sensor and beacon positions
+    sensors = positions.keys()
+    beacons = set(positions.values())
+    # Find the minimum and maximum x coordinates of the sensors and beacons
+    max_x = max(sensor[0] for sensor in sensors | beacons)
+    max_y = max(sensor[1] for sensor in sensors | beacons)
+    max_x = 4000000 if max_y > 1000 else 20
+    pos_counter = 0
+    pos_tested = set()
+    possible_positions = set()
+
+    # sort sensors by distance to beacon
+    sensors_list = sorted(sensors, key=lambda sensor: dist(sensor, positions[sensor]))
+
+    directions = [(1, 1), (-1, 1), (-1, -1), (1, -1)]   # clockwise from top left
+    radius_offset = 1
+    for sensor in sensors_list:
+        beacon = positions[sensor]
+        radius = dist(sensor, beacon) + radius_offset
+        print("Sensor nr.",sensors_list.index(sensor), "out of", len(sensors), ", proceeding to radius", radius)
+        x0 = sensor[0]
+        y0 = sensor[1] - radius
+        for dx, dy in directions:
+            print("direction: ", dx, dy, end=" | ")
+            for q in range(radius):
+                x = x0 + q * dx
+                y = y0 + q * dy
+                if x < 0 or y < 0 or x > max_x or y > max_y:
+                    continue
+                if (x, y) in sensors | beacons:
+                    continue
+                if all(dist(sensor, (x, y)) > dist(positions[sensor], sensor) for sensor in sensors):
+                    possible_positions.add((x, y))
+                    pos_counter += 1
+                    print("Solution found: ", x, y)
+                    print("Key", 4000000 * x + y)
+                    quit()
+        print()
+    radius_offset += 1
+
+    print(f'{pos_counter} positions CAN contain a beacon')
+    return possible_positions
+
+
+
 def part1():
     # Read the input
     positions = read_input()
-    #print_grid(positions)
+    # print_grid(positions)
 
     points = positions.keys() | positions.values()
     # Count the number of positions where a beacon cannot be present in the given row
     # first, count the total number of positions in the row
     min_x = min(point[0] for point in points)
     max_x = max(point[0] for point in points)
+    max_y = max(sensor[1] for sensor in points)
 
-    total_positions =  max_x - min_x + 1
+    roi = 2000000 if max_y > 1000 else 10  # row of interest
 
-    roi = 2000000    # row of interest
     impossible_pos = count_impossible_positions(positions, roi)
 
     print("Impossible positions", impossible_pos)
-    #print_grid(positions, roi)
+    # for debugging - print impossible positions as a row
+    # print_grid(positions, roi)
 
     # print(f"{roi:>2}: ", end="")
     # for x in range(min_x, max_x + 1):
@@ -225,5 +311,17 @@ def part1():
     # print()
 
 
+# find one of few possible solutions - brute force in unfeasible
+# test circles around each sensor, starting with radius=dist(sensor, beacon)+1
+def part2(filename="15inputS.txt"):
+    # Read the input
+    positions = read_input(filename)
+    # print_grid(positions)
+
+    # part2: find the position of the beacon with min_x = min_y = 0, max_x = max_y = 4000000
+    print(fast_possible_position(positions))
+
+
 if __name__ == "__main__":
-    part1()
+    # part1()
+    part2("15input.txt")
