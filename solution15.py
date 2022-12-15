@@ -179,13 +179,17 @@ def count_impossible_positions(positions, row):
     # Find the minimum and maximum x coordinates of the sensors and beacons
     min_x = min(sensor[0] for sensor in sensors | beacons)
     max_x = max(sensor[0] for sensor in sensors | beacons)
+    max_y = max(sensor[1] for sensor in sensors | beacons)
+
+    #TODO: check if increase necessary
+    increase = max(max_y, max_x - min_x)
 
     # Initialize a set of positions where a beacon cannot be present
     possible_positions = set()
     impossible_positions = set()
     counter = 0
     # Iterate over the x coordinates
-    for x in range(min_x, max_x + 1):
+    for x in range(min_x - increase, max_x + increase):
         if any(dist(sensor, (x, row)) <= dist(positions[sensor], sensor) for sensor in sensors):
             if (x, row) not in beacons:
                 #impossible_positions.add((x, row))
@@ -207,7 +211,7 @@ def part1():
 
     total_positions =  max_x - min_x + 1
 
-    roi = 10    # row of interest
+    roi = 2000000    # row of interest
     impossible_pos = count_impossible_positions(positions, roi)
 
     print("Impossible positions", impossible_pos)
