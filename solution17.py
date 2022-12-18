@@ -1,4 +1,5 @@
 # --- Day 17: Pyroclastic Flow ---
+# simple TETRIS simulation
 # Your handheld device has located an alternative exit from the cave for you and the elephants. The ground is rumbling almost continuously now, but the strange valves bought you some time. It's definitely getting warmer in here, though.
 #
 # The tunnels eventually open into a very tall, narrow chamber. Large, oddly-shaped rocks are falling into the chamber from above, presumably due to all the rumbling. If you can't work out where the rocks will fall next, you might be crushed!
@@ -73,6 +74,7 @@ rocks = [['####'],
 
 print(rocks)
 
+goal = 1000000000000
 
 def simulate_falling_rocks(pieces=2022, pattern='>>><<><>><<<>><>>><<<>>><<<><<<>><>><<>>'):
     pit = [['#'] * 9] + [['#'] + ['.'] * 7 + ['#'] for _ in range(7)]  # pit[0] is the floor
@@ -87,7 +89,7 @@ def simulate_falling_rocks(pieces=2022, pattern='>>><<><>><<<>><>>><<<>>><<<><<<
         and its bottom edge is 3 units above the highest rock in the room (or the floor, if there isn't one).
         """
         if len(rock) + 3 + height > len(pit) - 1:
-            pit += [['#'] + ['.'] * 7 + ['#'] for _ in range(len(rock) + 3 + height + 7 - len(pit))]
+            pit += [['#'] + ['.'] * 7 + ['#'] for _ in range(len(rock) + 3 + height + 1 - len(pit))]
 
         return 3, height + 3 + len(rock)
 
@@ -133,6 +135,8 @@ def simulate_falling_rocks(pieces=2022, pattern='>>><<><>><<<>><>>><<<>>><<<><<<
 
         return pos
 
+    top = dict() # dict index of piece -> hash of top 100 rows of the pit
+
     height = 0  # current height of the tower
     pattern_pos = 0  # current position in the pattern
     for i in range(pieces):
@@ -144,8 +148,27 @@ def simulate_falling_rocks(pieces=2022, pattern='>>><<><>><<<>><>>><<<>>><<<><<<
             # print_pit(pit)
             raise ValueError('Rock does not fit in the pit')
         place_rock(pit, rock, cpos)
-        # print('piece', i, 'height', height, 'cpos', cpos, 'pos:', pattern_pos, pattern[pattern_pos])
-        # print_pit(pit)
+        #print('piece', i, 'height', height, 'cpos', cpos, 'pos:', pattern_pos, pattern[pattern_pos])
+        #print_pit(pit)
+
+        def get_hash(pit):
+            rows = min(len(pit), 100)
+            return hash(''.join([''.join(pit[j]) for j in range(len(pit) - 1, len(pit) - 1 - rows, -1)]))
+
+        h = get_hash(pit)
+        if h in top:
+            print('repeated', i % len(rocks), 'height', height, 'cpos', cpos, 'pos:', pattern_pos, pattern[pattern_pos])
+
+            top[h].add((i, height, cpos, pattern_pos))
+            # only for part 2 - find the cycle to predict the height of the tower at goal == 1000000000000
+            if len(top[h]) > 7:
+                if i % 1745 == 1010:    #   1745 is the period of the pattern, 1010 is the first piece in the pattern
+                                        # that has the same remainder as the goal
+                    data = sorted(list(top[h]), key=lambda x: x[0])
+                    print(*data, sep='\n')
+                    return [(x[0], x[1]) for x in data]
+        else:
+            top[h] = {(i, height, cpos, pattern_pos)}
 
         stop = False
         while not stop:
@@ -165,4 +188,24 @@ def simulate_falling_rocks(pieces=2022, pattern='>>><<><>><<<>><>>><<<>>><<<><<<
 
 
 if __name__ == '__main__':
-    print(simulate_falling_rocks(pieces=2022, pattern=read_input()))
+    print(len(read_input()))
+    data = simulate_falling_rocks(pieces=1000000, pattern=read_input())
+
+    # part 2
+    # print(*data, sep='\n')
+    # linear regression of the data columns 0 and 1
+    import statsmodels.api as sm
+    X = sm.add_constant([x[0] for x in data])
+    y = [x[1] for x in data]
+    model = sm.OLS(y, X)
+    results = model.fit()
+    for x, y in data:
+        print(x, y, results.predict([1, x]))
+    print(25139, results.predict([1, 15933]))
+    res = results.predict([1, 1000000000000])
+    r1 = round(res.min(),10)    # this produces the correct result for part 2 1577650429835
+    r2 = round(res.max(),10)
+    print(res, r1, r2)
+    #print(round(res,20))
+    #print(f'value at 1000000000000 {res:.20f}')
+    #print(results.summary())
