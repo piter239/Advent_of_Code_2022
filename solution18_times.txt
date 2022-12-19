@@ -1,0 +1,3 @@
+Example: 64
+Input: 3586
+Union 2072
