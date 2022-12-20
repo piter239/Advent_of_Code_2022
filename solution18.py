@@ -64,7 +64,7 @@ print("Example:", calculate_surface_area(cubes))
 
 # union find solution
 
-def get_air_neighbors(solid_cubes, x, y, z, d=1):
+def get_air_neighbors(solid_cubes, x, y, z, d=2):
     ''''''
     neighbors = set()
 
@@ -81,7 +81,7 @@ def get_air_neighbors(solid_cubes, x, y, z, d=1):
     return neighbors
 
 
-def get_air_cubes(cubes, d=1):
+def get_air_cubes(cubes, d=2):
     # Set of air cubes
     air_cubes = set()
 
@@ -99,7 +99,7 @@ def get_air_cubes(cubes, d=1):
     return air_cubes
 
 
-def add_air_cubes(air_cubes, d):
+def add_air_cubes(air_cubes, d=2):
     # Set of air cubes to be added
     air_cubes_to_add = set()
 
@@ -130,7 +130,7 @@ def index_to_cube(index):
     z = index - x * 1000000 - y * 1000
     return x, y, z
 
-def calculate_surface_area_union(cubes, d):
+def calculate_surface_area_union(cubes, d=2):
     # Set of air cubes in the neighborhood of the lava cubes
     air_cubes = get_air_cubes(cubes, d)
     final_air_cubes = frozenset(air_cubes)
@@ -188,5 +188,5 @@ def read_cubes(filename='18input.txt'):
 
 
 full_cubes = read_cubes()
-print("Input:", calculate_surface_area(full_cubes))
-print("Union", calculate_surface_area_union(full_cubes, 2))
+print("Part 1: surface =", calculate_surface_area(full_cubes))
+print("Part 2: reachable surface using union-find = ", calculate_surface_area_union(full_cubes))
