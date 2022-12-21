@@ -3,7 +3,7 @@ import re
 def monkey_math(input_str):
     # Use a regular expression to replace each job with a function definition
     # that calls the functions and returns the result of the job
-    def_str = re.sub(r"(\w+): (\w+) (\W) (\w+)", r"def \1(): return \2() \3 \4()", input_str)
+    def_str = re.sub(r"(\w+): (\w+) (\W+) (\w+)", r"def \1(): return \2() \3 \4()", input_str)
     # Use a regular expression to replace each number with a function definition
     # that returns the number
     def_str = re.sub(r"(\w+): (\d+)", r"def \1(): return \2", def_str)
