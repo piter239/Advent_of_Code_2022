@@ -1309,7 +1309,7 @@ fhwq: 3
 pjmz: vgmc / cdbq
 tjnp: jggb * tlpp
 rmhl: 3
-root: lttc + pfjc
+root: lttc = pfjc
 cbdr: sqrp * twqn
 tdlt: rfnd + rbvs
 lbmt: 2
@@ -1745,7 +1745,6 @@ bmpq: lzbz * szlq
 gjhb: fwbj - mnfs
 jljb: zqnj * gwmv
 tjht: 7
-humn: 1200
 nmsl: 2
 wqfg: 1
 lwdh: 1
