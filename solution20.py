@@ -19,50 +19,69 @@ def compute_code(numbers):
 
 
 def p(*args):
-    return
+    #return
     import sys
     print(*args, file=sys.stderr, flush=True)
 
-def mix(numbers):
+# Part 1 - n=1 for part 1, n=10 for part 2
+def mix(numbers, n=1):
     # Move each number forward or backward in the file a number of positions equal to the value of the number being moved
     # decorate sort undecorate
     decorated = [(i, x) for i,x in enumerate(numbers)]
-    p("init", decorated)
-    for i, x in decorated.copy():
-        curr_i = decorated.index((i, x))
-        decorated.remove((i,x))
-        new_i = (curr_i + x) % (len(numbers) - 1)
-        if new_i:
-            decorated.insert(new_i, x)
-        else:
-            decorated.append(x)
-        p(f"i={i}, x={x}, (curr_i+x)%(len(numbers)-1)={(curr_i + x) % (len(numbers))}, curr_i={curr_i}, new_i={new_i}", decorated)
+    initial = decorated[:]  # copy
+    p("init   ", [x[1] for x in decorated])
+    for round in range(n):
+        for i, x in initial:
+            curr_i = decorated.index((i, x))
+            decorated.remove((i,x))
+            new_i = (curr_i + x) % (len(numbers) - 1)
+            if new_i:
+                decorated.insert(new_i, (i,x))
+            else:
+                decorated.append((i,x))
+        p(f"round={round}", [x[1] for x in decorated])
 
-    return decorated
+    return [x for i,x in decorated]
 
 
 
 # Test the function with the given encrypted file
-encrypted_file = [1, 2, -3, 3, -2, 0, 4]
-encrypted_file = mix(encrypted_file)
-result = compute_code(encrypted_file)
-expected_result = 3
-expected_list = [1, 2, -3, 4, 0, 3, -2]
-# Check that the result is correct
-if result == expected_result:
-    print("Result is correct")
-else:
-    print("Result is incorrect. \n"
-          "Expected:", expected_result,
-          "/n  Actual:", result)
-# Check that the final state of the list is correct
+def test(n=1, data_list= [1, 2, -3, 3, -2, 0, 4], result_list=[1, 2, -3, 4, 0, 3, -2], result=3, key=811589):
+    encrypted_file = data_list
+    encrypted_file = mix(encrypted_file, n)
+    result = compute_code(encrypted_file)
+    expected_result = result
+    expected_list = result_list
+    # Check that the result is correct
+    if result == expected_result:
+        print("Result is correct")
+    else:
+        print("Result is incorrect. \n"
+              "Expected:", expected_result,
+              "/n  Actual:", result)
+    # Check that the final state of the list is correct
 
-if encrypted_file == expected_list:
-    print("Final list is correct")
-else:
-    print("Final list is incorrect. \n"
-          "Expected:", expected_list,
-          "\n  Actual:", encrypted_file)
+    if encrypted_file == expected_list:
+        print("Final list is correct")
+    else:
+        print("Final list is incorrect. \n"
+              "Expected:", expected_list,
+              "\n  Actual:", encrypted_file)
+
+# Part 2
+# First, you need to apply the decryption key, 811589153. Multiply each number by the decryption key before you begin;
+# this will produce the actual list of numbers to mix.
+#
+# Second, you need to mix the list of numbers ten times. The order in which the numbers are mixed does not change during mixing;
+# the numbers are still moved in the order they appeared in the original, pre-mixed list.
+# (So, if -3 appears fourth in the original list of numbers to mix, -3 will be the fourth number to move during each round of mixing.)
+#
+# Using the same example as above:
+# Test Part 2
+
+def apply_key(numbers, key=811589153):
+    return [x * key for x in numbers]
+
 
 
 def read_input_file(filename="20input.txt"):
@@ -71,7 +90,15 @@ def read_input_file(filename="20input.txt"):
     return map(int, data.split())
 
 
-data = list(read_input_file())
-print(len(list(data)), len(set(data)))
-res = compute_code(mix(data))
-print(res)
+
+if __name__ == "__main__":
+    print("Part 1")
+    test()
+    print("Part 2")
+    data_list = apply_key([1, 2, -3, 3, -2, 0, 4], key=811589153)
+    test(n=10, data_list=data_list, result_list=[0, -2434767459, 1623178306, 3246356612, -1623178306, 2434767459, 811589153],
+         result=1623178306)
+
+    # data = list(read_input_file())
+    # res = compute_code(mix(apply_key(data), 10))
+    # print(res)
