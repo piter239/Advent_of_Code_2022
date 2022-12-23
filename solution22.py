@@ -200,25 +200,35 @@ def compute_neighbors_cube(map_dict):
                 else:  # wrap around
                     curr_face = get_face(row, col)
                     #new_face = get_face(row + dr, col + dc)
-                    wrap = {(2, 1, '>'): ('<', lambda r, c: (149 - r, 99)),
-                            (1, 2, '>'): ('<', lambda r, c: (149 - r, 149)),
-                            (2, 4, '^'): ('^', lambda r, c: (199, c - 100)),
-                            (4, 2, 'v'): ('v', lambda r, c: (0, c + 100)),
-                            (2, 3, 'v'): ('<', lambda r, c: (c - 50, 99)),
-                            (3, 2, '>'): ('^', lambda r, c: (c - 50, 49)),
-                            (6, 4, '^'): ('>', lambda r, c: (c + 100, 0)),
-                            (4, 6, '<'): ('v', lambda r, c: (0, r - 100)),
-                            (6, 5, '<'): ('>', lambda r, c: (149 - r, 0)),
-                            (5, 6, '>'): ('<', lambda r, c: (199, r - 150)),
-                            (3, 5, '<'): ('v', lambda r, c: (100, r - 50)),
-                            (5, 3, '^'): ('>', lambda r, c: (c + 50, 50)),
-                            (1, 4, 'v'): ('<', lambda r, c: (c + 100, 49)),
-                            (4, 1, '>'): ('^', lambda r, c: (149, r - 100)),
+                    wrap = {(2, '>'): ('<', lambda r, c: (149 - r, c -  50)),
+                            (1, '>'): ('<', lambda r, c: (149 - r, c +  50)),
+                            (2, '^'): ('^', lambda r, c: (r + 199, c - 100)),
+                            (4, 'v'): ('v', lambda r, c: (r - 199, c + 100)),
+                            (2, 'v'): ('<', lambda r, c: (c - 50, r + 50)),
+                            (3, '>'): ('^', lambda r, c: (c - 50, r + 50)),
+                            (6, '^'): ('>', lambda r, c: (c + 100, 0)),
+                            (4, '<'): ('v', lambda r, c: (0, r - 100)),
+                            (6, '<'): ('>', lambda r, c: (149 - r, c - 50)),
+                            (5, '<'): ('>', lambda r, c: (149 - r, 50)),
+                            (3, '<'): ('v', lambda r, c: (100, r - 50)),
+                            (5, '^'): ('>', lambda r, c: (c + 50, 50)),
+                            (1, 'v'): ('<', lambda r, c: (c + 100, 49)),
+                            (4, '>'): ('^', lambda r, c: (149, r - 100)),
                             }
-                    new_direction, (curr_row, curr_col) = wrap[(curr_face, new_face, d)]
+                    new_direction, fn = wrap[(curr_face, d)]
+                    curr_row, curr_col = fn(row, col)
+                    try:
+                        assert str(get_face(curr_row, curr_col)) in cub_faces
+                    except:
+                        p(f"from {row},{col} face {curr_face} in dir {d} got", curr_row, curr_col)
+                        raise RuntimeError("Invalid coordinates")
                     neighbors[(row, col)][d] = (curr_row, curr_col), new_direction
     return neighbors
 
+import sys
+def p(*s):
+    return
+    print(*s, file=sys.stderr, flush=True)
 
 def solution22_cube(input_source):
     map_dict, instructions = read_map(input_source.splitlines())
@@ -226,6 +236,7 @@ def solution22_cube(input_source):
     row, col = find_start(map_dict)
     facing = 0  # 0 for right, 1 for down, 2 for left, 3 for up
     for instruction in split_instructions(instructions):
+        p((row,col), facing, instruction)
         if instruction in "RL":
             facing = (facing + 1 * (-1) ** (instruction == 'L')) % 4
         else:
@@ -235,6 +246,7 @@ def solution22_cube(input_source):
                     break
                 row, col = next_row, next_col
                 facing = dirs.index(new_dir)
+    p((row, col), facing)
     return 1000 * (row + 1) + 4 * (col + 1) + facing  # 1-based indexing
 
 
@@ -245,5 +257,8 @@ if __name__ == "__main__":
     # # print(map_dict, "\n")
     # print(nbhd)
     #print(solution22_cube(input_string))
-    with open("22input.txt") as f:
+    with open("22input_empty.txt") as f:
         print(solution22_cube(f.read()))
+        p("Should return to (0, 50) facing right. That way we know the cube is folded OK.")
+    with open("22input.txt") as f:
+        print("Part 2:", solution22_cube(f.read()))
