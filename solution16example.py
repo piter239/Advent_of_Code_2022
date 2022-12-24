@@ -1,32 +1,111 @@
 # this is NOT my solution
 # as an example, from https://github.com/svinther/AoC/blob/main/2022/a16.py
 # all rights to the author
-from functools import cache
+import time
+from collections import defaultdict, deque
+from functools import lru_cache
+from itertools import combinations, chain
+from math import inf
 from pathlib import Path
 
 DAY = 16
 full_input_ = Path(f"{DAY}input.txt").read_text()
 
-def solve(parsed):
-    rates={p[0]:p[1] for p in parsed}
-    nbs = {p[0]:p[2] for p in parsed}
 
-    @cache
+def compact(parsed):
+    N = {n for n, rate, nbs in parsed if rate > 0}
+    nbs = {n: nbs for n, rate, nbs in parsed}
+
+    edges = defaultdict(dict)
+
+    for n in N | {"AA"}:
+        Q = deque([(n, 0)])
+        visited = set()
+        while Q:
+            current, dist = Q.popleft()
+            visited.add(current)
+            if current != n and current in N:
+                edges[n][current] = dist
+            for nb in nbs[current]:
+                if nb not in visited:
+                    Q.append((nb, dist + 1))
+    return edges
+
+
+def solve(edges, maxtime, rates, initialopen):
+    maxdepth = inf
+
+    @lru_cache(maxsize=None)
     def recurse(t, current, isopen):
-        released = sum(rates[o] for o in isopen)
+        if maxdepth == len(isopen):
+            return 0, isopen
 
-        if t == 30:
-            return released
+        score = sum(rates[o] for o in isopen)
+        if rates[current] > 0:
+            # spend one sec opening valve
+            isopen = tuple(sorted(isopen + (current,)))
+            t += 1
+        pressure = sum(rates[o] for o in isopen)
 
-        openscore = 0
-        if current not in isopen and rates[current] > 0:
-            openscore = recurse(t + 1, current, tuple(sorted(isopen + (current,))))
+        bestmovescore = 0, isopen
+        for nb, cost in edges[current].items():
+            if nb in isopen:
+                continue
+            if nb not in edges:
+                continue
+            assert nb != "AA"
+            if t + cost <= maxtime:
+                recurse_score, isopen_ = recurse(t + cost, nb, isopen)
+                movescore = score + pressure * cost + recurse_score
+                if movescore > bestmovescore[0]:
+                    bestmovescore = movescore, isopen_
 
-        movescore = max(recurse(t + 1, nb, isopen) for nb in nbs[current])
+        if bestmovescore[0] == 0:
+            return score + pressure * (maxtime - t), isopen
+        return bestmovescore
 
-        return released + max(openscore, movescore)
+    return recurse(0, "AA", initialopen)
 
-    return recurse(1, parsed[0][0], tuple())
+
+def solvep1(parsed):
+    rates = {n: rate for n, rate, nbs in parsed}
+    return solve(compact(parsed), 30, rates, tuple())
+
+
+def solvep2(parsed):
+    rates = {n: rate for n, rate, nbs in parsed}
+    edges = compact(parsed)
+
+    valves = [e for e in edges if e != "AA"]
+    opencombos = chain.from_iterable(
+        [combinations(valves, l) for l in range(1, len(valves))]
+    )
+
+    best = 0
+    i = 0
+    t0 = t = time.process_time()
+    for combo in opencombos:
+        p1score, p1used = solve(
+            {k: v for k, v in edges.items() if k == "AA" or k in combo},
+            26,
+            rates,
+            tuple(),
+        )
+        p2score, p2used = solve(
+            {k: v for k, v in edges.items() if k == "AA" or k not in combo},
+            26,
+            rates,
+            tuple(),
+        )
+        best = max(best, p1score + p2score)
+
+        i += 1
+        if i % 100 == 0:
+            t_ = time.process_time()
+            print(i, 100 // (t_ - t), "tps", i // (t_ - t0), "tpstot")
+            t = t_
+
+    return best
 
 
 def parse(input_: str):
@@ -58,25 +137,16 @@ Valve II has flow rate=0; tunnels lead to valves AA, JJ
 Valve JJ has flow rate=21; tunnel leads to valve II
 """
     parsed = parse(input_)
-    assert solve(parsed) == 1651
-
-
-def testcustom():
-    # input_=Path(f"{DAY}ex.txt").read_text()
-    input_ = """\
-Valve AA has flow rate=0; tunnels lead to valves BB,CC
-Valve BB has flow rate=0; tunnels lead to valves CC, DD, AA
-Valve CC has flow rate=2; tunnels lead to valves CC
-Valve DD has flow rate=2; tunnels lead to valves DD
-"""
-    parsed = parse(input_)
-    assert solve(parsed) == 28 * 2
-
+    assert solvep1(parsed)[0] == 1651
+    assert solvep2(parsed) == 1707
 
 
 def run():
     parsed = parse(full_input_)
-    result = solve(parsed)
+    result = solvep1(parsed)
+    print(result)
+
+    result = solvep2(parsed)
     print(result)
 
 
